@@ -1,0 +1,191 @@
+y-combinator evaluation (recursion in the untyped lambda calculus).
+
+We will never require something so extreme in homeworks or test questions!
+If this looks excessively complicated, keep in mind that this encompasses the entire
+'machine' that runs the computation, not just the expression to be evaluated. It's 
+akin to explicitly managing your own stack in order to perform recursion in some
+imperative language implementation.
+
+
+================================================================================
+================================================================================
+
+ycomb = \f . (   (\x.(f (\y. x x y)))  (\x.(f (\y. x x y)))  ) 
+
+================================================================================
+
+-- nicely laid-out version of evenF. In general, when we want recursion, we wrap
+-- the whole definition with a \self lambda, and then use self as a reference to
+-- ourselves to perform the recursive call.
+
+evenF = \self . \n . (  if (n==0)
+                        then Tru 
+                        else (  if (n==1)
+                                then Fls
+                                else (self (n-2))
+                             )
+                     )
+
+-- identical one-line version, easier for cut-pasted substitutions below.
+evenF = (\self . \n . (if (n==0) then Tru else (if (n=1) then Fls else (self (n-2)))))
+
+================================================================================
+
+-- now, we use ycomb to turn our \self-aware definition into an actual recursive
+-- one. It lazily expands another copy of itself out every time we reach the
+-- recursive call.
+
+iseven = (ycomb evenF)
+
+================================================================================
+================================================================================
+
+
+Goal: evaluate this expression:
+
+    iseven 4
+
+
+each transition is described after a =>.
+
+But the relevant lambda variable, lambda body, and argument are all under-marked.
+                 [^^^^^^^^^^^^^^  ___________]     ^^^^^^^^
+
+================================================================================
+
+(isven 4)
+
+=>  expand iseven
+
+    (ycomb evenF) 4
+
+=>  expand ycomb
+
+    ((\f . (   (\x.(f (\y. x x y)))  (\x.(f (\y. x x y)))  )) evenF)    4
+
+     [^^^  _________________________________________________] ^^^^^
+
+=>  substitute evenF for \f
+
+           (   (\x . (evenF (\y. x x y)))  (\x.(evenF (\y. x x y)))  )  4
+               [^^^  ___________________]  ^^^^^^^^^^^^^^^^^^^^^^^^
+
+=>  substitute  the second  (\x.(evenF (\y. x x y)))        for the first \x
+
+    (evenF (\y. (\x.(evenF (\y. x x y)))   (\x.(evenF (\y. x x y)))  y))    4
+     ^^^^^
+
+================================================================================
+-- We continue, but the result above should be noted; we'll see a similar call
+-- after one recursive step, with a 2 instead of a 4 here.
+
+
+=>  expand the first evenF
+
+    ((\self . \n . (if (n==0) then Tru else (if (n=1) then Fls else (self (n-2)))))      (\y. (\x.(evenF (\y. x x y)))   (\x.(evenF (\y. x x y)))    y))    4
+     [ ^^^^   ____________________________________________________________________]      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+=> plug in for \self:   (\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y)
+
+     (\n . (if (n==0) then Tru else (if (n=1) then Fls else (   (\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y) (n-2)))))    4
+     [^^^  ________________________________________________________________________________________________________________________] 
+
+=> plug in for \n: 4
+
+    (if (4==0) then Tru else (if (4=1) then Fls else (   (\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y) (4-2)))  )
+                             [____________________________________________________________________________________________]
+=>  take the else branch.
+
+    if (4=1) then Fls else (   (\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y) (4-2))
+                               [_______________________________________________________________]
+=>  take the else branch.
+
+    ((\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y)) (4-2)
+                                                                 [___]
+=> simplify (4-2).
+
+    ((\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y)) 2
+    ((\y. fffffffffffffffffffffffffffffffffffffffffffffffff  y)) 2
+
+=>  collapse this eta expansion:   (\y . f y)       (where f =  (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))
+
+    (   (\x . (evenF (\y. x x y)))  (\x.(evenF (\y. x x y)))  ) 2
+        [^^^  ___________________]  ^^^^^^^^^^^^^^^^^^^^^^^^
+
+=>  substitute the second       (\x.(evenF (\y. x x y)))        for the first \x.
+
+    (evenF (\y. (\x.(evenF (\y. x x y)))   (\x.(evenF (\y. x x y)))  y))    2
+     ^^^^^
+
+
+================================================================================
+We've reached the first full tail-recursive effort, so this shape is very
+familiar. Only the 2 vs 4 is different from the above.
+
+
+=>  expand the first evenF.
+
+    ((\self . \n . (if (n==0) then Tru else (if (n=1) then Fls else (self (n-2)))))      (\y. (\x.(evenF (\y. x x y)))   (\x.(evenF (\y. x x y)))    y))    2
+     [ ^^^^   ____________________________________________________________________]      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    
+=> plug in for \self:   (\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y)
+
+     (\n . (if (n==0) then Tru else (if (n=1) then Fls else (   (\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y) (n-2)))))    2
+     [^^^  ________________________________________________________________________________________________________________________] 
+
+=> plug in for \n: 2
+
+    (if (2==0) then Tru else (if (2=1) then Fls else (   (\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y) (2-2)))  )
+                             |                       [___________________________________________________________________]|
+                             [____________________________________________________________________________________________]
+
+=> take the two else branches.
+
+    ((\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y)) (2-2)
+
+=>  simplify 2-2.
+    
+    ((\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y)) 0
+    ((\y .fffffffffffffffffffffffffffffffffffffffffffffffff  y)) 0
+
+=>  collapse this eta-expansion:    (\y. f y)       (where f=       (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))   )
+
+    ((\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))) 0
+     [^^^___________________] ^^^^^^^^^^^^^^^^^^^^^^^^
+
+=>  plug in for first \x:   second occurrence of    (\x.(evenF (\y. x x y)))
+
+    ((evenF (\y.  (\x.(evenF (\y. x x y)))    (\x.(evenF (\y. x x y)))     y))) 0
+      ^^^^^
+
+
+================================================================================
+One more full recursive step has been taken; now we have a 0 instead of a 2.
+
+
+=>  expand the first evenF.
+
+    ((\self . \n . (if (n==0) then Tru else (if (n=1) then Fls else (self (n-2)))))      (\y. (\x.(evenF (\y. x x y)))   (\x.(evenF (\y. x x y)))    y))    0
+     [ ^^^^   ____________________________________________________________________]      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    
+=> plug in for \self:   (\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y)
+
+     (\n . (if (n==0) then Tru else (if (n=1) then Fls else (   (\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y) (n-2)))))    0
+     [^^^  ________________________________________________________________________________________________________________________] 
+
+=> plug in for \n: 0
+
+    (if (0==0) then Tru else (if (0=1) then Fls else (   (\y. (\x.(evenF (\y. x x y))) (\x.(evenF (\y. x x y)))  y) (0-2)))  )
+                   [___]
+
+=> take the then-branch (and also stop recursing!)
+
+    Tru
+
+
+================================================================================
+
+So, we've recursively shown that (iseven 4) is Tru.
+
+================================================================================
+================================================================================

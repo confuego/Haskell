@@ -1,0 +1,35 @@
+================================================================================
+omega combinator expansion
+================================================================================
+
+omega = (\x . x x) (\x . x x)
+
+
+	(\x . x x)  (\x . x x)
+	[^^^ ____]  ^^^^^^^^^^
+
+=>	substitute the second (\x.x x) for the first \x.
+
+	(\x . x x) (\x . x x)
+
+it's the same thing again!
+
+================================================================================
+
+It might help to see different names:
+
+
+	(\x . x x) (\y . y y)
+
+=> substitute (\y.y y) for \x.
+
+	(\y . y y) (\y . y y)
+
+=> rename the first \y to \x.
+
+	(\x . x x) (\y . y y)
+
+
+...and we're back to the start.
+
+================================================================================

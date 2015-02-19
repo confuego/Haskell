@@ -67,5 +67,13 @@ nub (x1:x2:xs)
 	| (x1 == x2) = nub (x1:xs)
 	| otherwise = x1 : nub (x2:xs)
 
+data Harvest = Deficient Int | Abundant Int | Perfect  Int
+			   deriving(Show,Eq)
+
+inspect :: Harvest -> Int
+
+
+
+
 
 
