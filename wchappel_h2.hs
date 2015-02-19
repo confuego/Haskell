@@ -67,13 +67,30 @@ nub (x1:x2:xs)
 	| (x1 == x2) = nub (x1:xs)
 	| otherwise = x1 : nub (x2:xs)
 
-data Harvest = Deficient Int | Abundant Int | Perfect  Int
+data Harvest = Harvest{d::Int,a::Int,p::Int}
 			   deriving(Show,Eq)
 
-inspect :: Harvest -> Int
 
+inspect :: Int -> Harvest
+inspect n
+	| (sumD > n) = Harvest {d =0,a = sumD, p = 0}
+	| (sumD < n) = Harvest {d = sumD,a = 0, p = 0}
+	| (sumD == n) = Harvest {d =0,a =0,p = n}
+	where sumD = sum (divisors n)
 
+perfectNumbers :: [Int]
+perfectNumbers = [v | v <- [1..],sum(divisors v) == v]
 
+catMaybes :: [Maybe a] -> [a]
+catMaybes [] = []
+catMaybes ((Just x):xs) = x : catMaybes xs
+catMaybes (Nothing:xs) = catMaybes xs
 
+maxList :: [Int] -> Maybe Int
+maxList [] = Nothing
+maxList (x1:x2:xs)
+	|(length (x1:x2:xs) == 2) = if(x1 > x2) then Just x1 else Just x2
+	|(x1 > x2) = maxList (x1:xs)
+	|(x2 > x1) = maxList (x2:xs)
 
 
