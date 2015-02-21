@@ -93,4 +93,25 @@ maxList (x1:x2:xs)
 	|(x1 > x2) = maxList (x1:xs)
 	|(x2 > x1) = maxList (x2:xs)
 
+data ORT = R Int | B (Maybe Int) [ORT] deriving (Show)
 
+-- format for input: (R (10)) or (B(Just 10)[ORT])
+maxRose :: ORT -> Maybe Int
+maxRose (B (Nothing) []) = Nothing
+maxRose (B (Just root) []) = Just root
+maxRose (B (Just root) children) = Just root -- root should always be highest if not null?
+maxRose (B (Nothing) (children)) = maxList (convert children)
+
+dethorn :: ORT -> [Int]
+dethorn (B (Nothing) []) = []
+dethorn (B (Nothing) children) = convert children
+dethorn (B (Just root) children) = ((root) : (convert children))
+
+int :: ORT -> Int
+int (R (num)) = num
+int (B (Just num) []) = num
+int (B (Just num) [children]) = num
+
+convert :: [ORT] ->[Int]
+convert [] = []
+convert (r:rs) = (int r) : (convert rs)
