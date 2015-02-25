@@ -1,3 +1,4 @@
+module Homework2 where
 import Prelude hiding (reverse, filter, elem, product, gcd)
 
 collatz::Int -> [Int]
@@ -26,25 +27,35 @@ elem :: Int -> [Int] -> Bool
 elem _ [] = False
 elem n (x:xs)
 	| (x == n) = True
-	| (x /= n) = elem n xs
+	| (x /= n) = n `elem` xs
 
 removeN :: Int -> Int -> [Int] -> [Int]
+removeN _ _ [] = []
 removeN n v (x:xs)
 	| (n >= 1 && x == v) = removeN (n-1) v xs
 	| otherwise = (x:xs)
 
 
 inCommon :: [Int] -> [Int] -> [Int]
+inCommon [] _ = []
+inCommon _ [] = []
 inCommon (x:xs) (y:ys) = [ c | c <- (y:ys), c `elem` (x:xs), c `elem` (y:ys)]
 
 isPrime :: Int -> Bool
-isPrime p = length [v | v <- [2..(p - 1)], p `mod` v == 0] == 0
+isPrime p
+	|(p > 1) = length [v | v <- [2..(p - 1)], p `mod` v == 0] == 0
+	| otherwise =  False
 
 primesUnder :: Int -> [Int]
 primesUnder p =  [v | v <- [2..(p - 1)], isPrime v == True]
 
 primeFactors :: Int -> [Int]
-primeFactors p =  [v | v <- [2..(p - 1)],p `mod` v == 0, isPrime v == True]
+primeFactors n = primeFactors' n (primesUnder n)
+	where
+    primeFactors' 1 _ = []
+    primeFactors' n (f:fs)
+      | (n `mod` f == 0) = f : primeFactors' (n `div` f) (f:fs)
+      | otherwise = primeFactors' n (fs)
 
 coprime :: Int -> Int -> Bool
 coprime a b = gcd a b  == 1
@@ -53,7 +64,7 @@ gcd :: Int -> Int -> Int
 gcd a b = maximum (inCommon (divisors a) (divisors b))
 
 divisors :: Int -> [Int]
-divisors n = [v | v <- [1..(n-1)], n `mod` v == 0]
+divisors n = [v | v <- [1..n], n `mod` v == 0]
 
 product :: [Int] -> Int
 product (x:xs)
@@ -67,19 +78,22 @@ nub (x1:x2:xs)
 	| (x1 == x2) = nub (x1:xs)
 	| otherwise = x1 : nub (x2:xs)
 
-data Harvest = Harvest{d::Int,a::Int,p::Int}
-			   deriving(Show,Eq)
+data Harvest = Abundant | Perfect | Deficient deriving(Show,Eq)
 
 
 inspect :: Int -> Harvest
 inspect n
-	| (sumD > n) = Harvest {d =0,a = sumD, p = 0}
-	| (sumD < n) = Harvest {d = sumD,a = 0, p = 0}
-	| (sumD == n) = Harvest {d =0,a =0,p = n}
-	where sumD = sum (divisors n)
+	| (sumD > n) = Abundant
+	| (sumD < n) = Deficient
+	| (sumD == n) = Perfect
+	where sumD = sum (divisors' n)
 
 perfectNumbers :: [Int]
-perfectNumbers = [v | v <- [1..],sum(divisors v) == v]
+perfectNumbers = [v | v <- [1..],sum(divisors' v) == v]
+
+-- used for perfect numbers
+divisors' :: Int -> [Int]
+divisors' n = [v | v <- [1..(n-1)], n `mod` v == 0]
 
 catMaybes :: [Maybe a] -> [a]
 catMaybes [] = []
@@ -88,6 +102,8 @@ catMaybes (Nothing:xs) = catMaybes xs
 
 maxList :: [Int] -> Maybe Int
 maxList [] = Nothing
+maxList (a:as)
+	| (length (a:as) == 1) = Just a
 maxList (x1:x2:xs)
 	|(length (x1:x2:xs) == 2) = if(x1 > x2) then Just x1 else Just x2
 	|(x1 > x2) = maxList (x1:xs)
@@ -101,11 +117,6 @@ maxRose (B (Nothing) []) = Nothing
 maxRose (B (Just root) []) = Just root
 maxRose (B (Just root) children) = Just root -- root should always be highest if not null?
 maxRose (B (Nothing) (children)) = maxList (convert children)
-
-dethorn :: ORT -> [Int]
-dethorn (B (Nothing) []) = []
-dethorn (B (Nothing) children) = convert children
-dethorn (B (Just root) children) = ((root) : (convert children))
 
 int :: ORT -> Int
 int (R (num)) = num
