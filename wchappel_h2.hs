@@ -50,6 +50,8 @@ primesUnder :: Int -> [Int]
 primesUnder p =  [v | v <- [2..(p - 1)], isPrime v == True]
 
 primeFactors :: Int -> [Int]
+primeFactors n
+	|(isPrime n == True)  = [n]
 primeFactors n = primeFactors' n (primesUnder n)
 	where
     primeFactors' 1 _ = []
@@ -109,13 +111,13 @@ maxList (x1:x2:xs)
 	|(x1 > x2) = maxList (x1:xs)
 	|(x2 > x1) = maxList (x2:xs)
 
-data ORT = R Int | B (Maybe Int) [ORT] deriving (Show)
+data ORT = R Int | B (Maybe Int) [ORT] deriving (Show,Eq)
 
--- format for input: (R (10)) or (B(Just 10)[ORT])
+
 maxRose :: ORT -> Maybe Int
 maxRose (B (Nothing) []) = Nothing
 maxRose (B (Just root) []) = Just root
-maxRose (B (Just root) children) = Just root -- root should always be highest if not null?
+maxRose (B (Just root) children) = Just root
 maxRose (B (Nothing) (children)) = maxList (convert children)
 
 int :: ORT -> Int
